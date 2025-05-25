@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  n8n-unlicensed-source:
+    build:
+      context: .
+      dockerfile: Dockerfile.n8n-unlicensed-source
+    image: n8n-unlicensed-source:latest
+    container_name: n8n-unlicensed-source
+    ports:
+      - "7001:5678"
+    environment:
+      - N8N_ENCRYPTION_KEY=test-encryption-key-change-in-production
+      - NODE_ENV=production
+      - N8N_SECURE_COOKIE=false
+      - N8N_DIAGNOSTICS_ENABLED=false
+      - N8N_TELEMETRY_ENABLED=false
+      - N8N_VERSION_NOTIFICATIONS_ENABLED=false
+      - N8N_TEMPLATES_ENABLED=true
+      - N8N_METRICS=false
+      - DB_TYPE=sqlite
+      - DB_SQLITE_DATABASE=/home/n8n/.n8n/database.sqlite
+      # Enterprise feature flags (should be enabled by our code modifications)
+      - N8N_ENTERPRISE_FEATURES_ENABLED=true
+    volumes:
+      - n8n-source-data:/home/n8n/.n8n
+      - n8n-source-files:/files
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5678/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+volumes:
+  n8n-source-data:
+    driver: local
+  n8n-source-files:
+    driver: local

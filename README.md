@@ -6,13 +6,25 @@ This is a modified version of n8n that bypasses all license checks and includes 
 
 ## 🚀 Quick Start with Docker
 
+### Option 1: Pre-built Image (Quick)
 ```bash
-# Build the unlicensed image
+# Build the image with auto-setup
 docker build -f Dockerfile.n8n-unlicensed -t n8n-unlicensed:latest .
 
 # Run with docker-compose
 docker-compose -f docker-compose.n8n-unlicensed.yml up -d
 ```
+
+### Option 2: Build from Source (Full License Bypass)
+```bash
+# Build from source with all modifications (takes 10-15 minutes)
+docker-compose -f docker-compose.n8n-source.yml build
+
+# Run the source-built version
+docker-compose -f docker-compose.n8n-source.yml up -d
+```
+
+See [BUILD-FROM-SOURCE.md](BUILD-FROM-SOURCE.md) for detailed instructions.
 
 ## 🔐 Access Credentials
 
