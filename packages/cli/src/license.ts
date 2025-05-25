@@ -220,8 +220,8 @@ export class License implements LicenseProvider {
 	}
 
 	isLicensed(feature: BooleanLicenseFeature) {
-		// Return false for non-prod banner, true for everything else
-		if (feature === 'feat:showNonProdBanner') {
+		// Return false for non-prod banner and API_DISABLED
+		if (feature === 'feat:showNonProdBanner' || feature === 'feat:apiDisabled') {
 			return false;
 		}
 		// Always return true for all other features
