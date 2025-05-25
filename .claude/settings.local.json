@@ -26,7 +26,13 @@
       "Bash(git push:*)",
       "Bash(git reset:*)",
       "Bash(git rm:*)",
-      "Bash(./test-license-features.sh:*)"
+      "Bash(./test-license-features.sh:*)",
+      "Bash(docker port:*)",
+      "Bash(find:*)",
+      "Bash(pnpm build:backend:*)",
+      "Bash(/Users/pvdyck/Dev/n8n-1/test-enterprise-features.sh)",
+      "Bash(/Users/pvdyck/Dev/n8n-1/test-api-complete.sh)",
+      "Bash(cat:*)"
     ],
     "deny": []
   }

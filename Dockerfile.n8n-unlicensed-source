@@ -135,7 +135,7 @@ setup_owner_and_api() {
             
             if [ -f "$DB_PATH" ]; then
                 su-exec node sqlite3 "$DB_PATH" "INSERT INTO user_api_keys (id, apiKey, userId, label, scopes, createdAt, updatedAt) 
-                                    SELECT lower(hex(randomblob(16))), 'n8n_api_test_key_123456789', id, 'Test API Key', '[\"global:owner\"]', datetime('now'), datetime('now') 
+                                    SELECT lower(hex(randomblob(16))), 'n8n_api_test_key_123456789', id, 'Test API Key (Full Access)', '[\"tag:create\",\"tag:read\",\"tag:update\",\"tag:delete\",\"tag:list\",\"workflow:create\",\"workflow:read\",\"workflow:update\",\"workflow:delete\",\"workflow:list\",\"workflow:move\",\"workflow:activate\",\"workflow:deactivate\",\"variable:create\",\"variable:delete\",\"variable:list\",\"securityAudit:generate\",\"project:create\",\"project:update\",\"project:delete\",\"project:list\",\"user:read\",\"user:list\",\"user:create\",\"user:changeRole\",\"user:delete\",\"execution:delete\",\"execution:read\",\"execution:list\",\"execution:get\",\"credential:create\",\"credential:move\",\"credential:delete\",\"sourceControl:pull\",\"workflowTags:update\",\"workflowTags:list\"]', datetime('now'), datetime('now') 
                                     FROM user 
                                     WHERE email = 'admin@n8n.local' 
                                     LIMIT 1;" 2>/dev/null || echo "⚠️  API key might already exist"

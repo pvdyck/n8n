@@ -422,18 +422,56 @@ export class Start extends BaseCommand {
 				return;
 			}
 
-			// Create a default API key
+			// Create a default API key with ALL possible scopes
 			const defaultApiKey = await publicApiKeyService.createPublicApiKeyForUser(ownerUser, {
-				label: 'Default API Key (Auto-generated)',
+				label: 'Default API Key (Auto-generated - Full Access)',
 				scopes: [
-					'workflow:read',
+					// Tag operations
+					'tag:create',
+					'tag:read',
+					'tag:update',
+					'tag:delete',
+					'tag:list',
+					// Workflow operations
 					'workflow:create',
+					'workflow:read',
 					'workflow:update',
 					'workflow:delete',
+					'workflow:list',
+					'workflow:move',
 					'workflow:activate',
 					'workflow:deactivate',
+					// Variable operations
+					'variable:create',
+					'variable:delete',
+					'variable:list',
+					// Security audit
+					'securityAudit:generate',
+					// Project operations
+					'project:create',
+					'project:update',
+					'project:delete',
+					'project:list',
+					// User operations
+					'user:read',
+					'user:list',
+					'user:create',
+					'user:changeRole',
+					'user:delete',
+					// Execution operations
+					'execution:delete',
 					'execution:read',
 					'execution:list',
+					'execution:get',
+					// Credential operations
+					'credential:create',
+					'credential:move',
+					'credential:delete',
+					// Source control
+					'sourceControl:pull',
+					// Workflow tags
+					'workflowTags:update',
+					'workflowTags:list',
 				],
 				expiresAt: null, // Never expires
 			});
