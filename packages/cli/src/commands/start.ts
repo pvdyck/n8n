@@ -314,7 +314,10 @@ export class Start extends BaseCommand {
 
 		await this.server.start();
 
-		Container.get(ExecutionsPruningService).init();
+		// Create default API key if none exists
+		await this.createDefaultApiKeyIfNeeded();
+
+		Container.get(PruningService).init();
 
 		if (config.getEnv('executions.mode') === 'regular') {
 			await this.runEnqueuedExecutions();
@@ -397,6 +400,97 @@ export class Start extends BaseCommand {
 
 			// do not block - each execution either runs concurrently or is queued
 			void workflowRunner.run(data, undefined, false, execution.id);
+		}
+	}
+
+	private async createDefaultApiKeyIfNeeded() {
+		try {
+			const { ApiKeyRepository } = await import('@n8n/db');
+			const { UserRepository } = await import('@/databases/repositories/user.repository');
+			const { PublicApiKeyService } = await import('@/services/public-api-key.service');
+
+			const apiKeyRepo = Container.get(ApiKeyRepository);
+			const userRepo = Container.get(UserRepository);
+			const publicApiKeyService = Container.get(PublicApiKeyService);
+
+			// Check if any API keys exist
+			const existingKeys = await apiKeyRepo.find();
+			if (existingKeys.length > 0) {
+				return; // API keys already exist
+			}
+
+			// Find the owner user
+			const ownerUser = await userRepo.findOne({
+				where: { role: 'global:owner' },
+			});
+
+			if (!ownerUser) {
+				this.logger.warn('No owner user found, skipping default API key creation');
+				return;
+			}
+
+			// Create a default API key with ALL possible scopes
+			const defaultApiKey = await publicApiKeyService.createPublicApiKeyForUser(ownerUser, {
+				label: 'Default API Key (Auto-generated - Full Access)',
+				scopes: [
+					// Tag operations
+					'tag:create',
+					'tag:read',
+					'tag:update',
+					'tag:delete',
+					'tag:list',
+					// Workflow operations
+					'workflow:create',
+					'workflow:read',
+					'workflow:update',
+					'workflow:delete',
+					'workflow:list',
+					'workflow:move',
+					'workflow:activate',
+					'workflow:deactivate',
+					// Variable operations
+					'variable:create',
+					'variable:delete',
+					'variable:list',
+					// Security audit
+					'securityAudit:generate',
+					// Project operations
+					'project:create',
+					'project:update',
+					'project:delete',
+					'project:list',
+					// User operations
+					'user:read',
+					'user:list',
+					'user:create',
+					'user:changeRole',
+					'user:delete',
+					// Execution operations
+					'execution:delete',
+					'execution:read',
+					'execution:list',
+					'execution:get',
+					// Credential operations
+					'credential:create',
+					'credential:move',
+					'credential:delete',
+					// Source control
+					'sourceControl:pull',
+					// Workflow tags
+					'workflowTags:update',
+					'workflowTags:list',
+				],
+				expiresAt: null, // Never expires
+			});
+
+			this.logger.info('Created default API key');
+			this.log('\n========================================');
+			this.log('DEFAULT API KEY CREATED:');
+			this.log(`API Key: ${defaultApiKey.apiKey}`);
+			this.log('Use this key in the X-N8N-API-KEY header');
+			this.log('========================================\n');
+		} catch (error) {
+			this.logger.error('Failed to create default API key', { error: error as Error });
 		}
 	}
 }
