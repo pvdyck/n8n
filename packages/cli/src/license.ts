@@ -7,6 +7,7 @@ import {
 	type BooleanLicenseFeature,
 	type NumericLicenseFeature,
 } from '@n8n/constants';
+import { SettingsRepository } from '@n8n/db';
 import { OnLeaderStepdown, OnLeaderTakeover, OnShutdown } from '@n8n/decorators';
 import { Container, Service } from '@n8n/di';
 import type { TEntitlement, TFeatures, TLicenseBlock } from '@n8n_io/license-sdk';
@@ -14,7 +15,6 @@ import { LicenseManager } from '@n8n_io/license-sdk';
 import { InstanceSettings, Logger } from 'n8n-core';
 
 import config from '@/config';
-import { SettingsRepository } from '@/databases/repositories/settings.repository';
 import { LicenseMetricsService } from '@/metrics/license-metrics.service';
 
 import { N8N_VERSION, SETTINGS_LICENSE_CERT_KEY, Time } from './constants';
@@ -106,9 +106,6 @@ export class License implements LicenseProvider {
 
 			await this.manager.initialize();
 
-			const features = this.manager.getFeatures();
-			this.checkIsLicensedForMultiMain(features);
-
 			this.logger.debug('License initialized');
 		} catch (error: unknown) {
 			if (error instanceof Error) {
@@ -141,8 +138,6 @@ export class License implements LicenseProvider {
 		}
 
 		this.logger.debug('License feature change detected', _features);
-
-		this.checkIsLicensedForMultiMain(_features);
 
 		if (isMultiMain && !isLeader) {
 			this.logger
@@ -416,21 +411,6 @@ export class License implements LicenseProvider {
 	}
 
 	/** @deprecated Use `LicenseState` instead. */
-	getInsightsMaxHistory() {
-		return this.getValue(LICENSE_QUOTAS.INSIGHTS_MAX_HISTORY_DAYS) ?? 7;
-	}
-
-	/** @deprecated Use `LicenseState` instead. */
-	getInsightsRetentionMaxAge() {
-		return this.getValue(LICENSE_QUOTAS.INSIGHTS_RETENTION_MAX_AGE_DAYS) ?? 180;
-	}
-
-	/** @deprecated Use `LicenseState` instead. */
-	getInsightsRetentionPruneInterval() {
-		return this.getValue(LICENSE_QUOTAS.INSIGHTS_RETENTION_PRUNE_INTERVAL_DAYS) ?? 24;
-	}
-
-	/** @deprecated Use `LicenseState` instead. */
 	getTeamProjectLimit() {
 		return this.getValue(LICENSE_QUOTAS.TEAM_PROJECT_LIMIT) ?? 0;
 	}
@@ -451,30 +431,6 @@ export class License implements LicenseProvider {
 	/** @deprecated Use `LicenseState` instead. */
 	isWithinUsersLimit() {
 		return this.getUsersLimit() === UNLIMITED_LICENSE_QUOTA;
-	}
-
-	/**
-	 * Ensures that the instance is licensed for multi-main setup if multi-main mode is enabled
-	 */
-	private checkIsLicensedForMultiMain(features: TFeatures) {
-		const isMultiMainEnabled =
-			config.getEnv('executions.mode') === 'queue' && this.globalConfig.multiMainSetup.enabled;
-		if (!isMultiMainEnabled) {
-			return;
-		}
-
-		const isMultiMainLicensed =
-			(features[LICENSE_FEATURES.MULTIPLE_MAIN_INSTANCES] as boolean | undefined) ?? false;
-
-		this.instanceSettings.setMultiMainLicensed(isMultiMainLicensed);
-
-		if (!isMultiMainLicensed) {
-			this.logger
-				.scoped(['scaling', 'multi-main-setup', 'license'])
-				.debug(
-					'License changed with no support for multi-main setup - no new followers will be allowed to init. To restore multi-main setup, please upgrade to a license that supports this feature.',
-				);
-		}
 	}
 
 	@OnLeaderTakeover()
