@@ -220,12 +220,8 @@ export class License implements LicenseProvider {
 	}
 
 	isLicensed(feature: BooleanLicenseFeature) {
-		// Always enable variables feature
-		if (feature === LICENSE_FEATURES.VARIABLES) {
-			return true;
-		}
-		// Use normal license check for other features
-		return this.manager?.hasFeatureEnabled(feature) ?? false;
+		// Always return true for all features
+		return true;
 	}
 
 	/** @deprecated Use `LicenseState.isSharingLicensed` instead. */
@@ -353,7 +349,8 @@ export class License implements LicenseProvider {
 	}
 
 	getValue<T extends keyof FeatureReturnType>(feature: T): FeatureReturnType[T] {
-		return this.manager?.getFeatureValue(feature) as FeatureReturnType[T];
+		// Always return unlimited for quota features
+		return UNLIMITED_LICENSE_QUOTA as FeatureReturnType[T];
 	}
 
 	getManagementJwt(): string {
@@ -435,7 +432,8 @@ export class License implements LicenseProvider {
 	}
 
 	getPlanName(): string {
-		return this.getValue('planName') ?? 'Community';
+		// Always return Enterprise
+		return 'Enterprise';
 	}
 
 	getInfo(): string {
