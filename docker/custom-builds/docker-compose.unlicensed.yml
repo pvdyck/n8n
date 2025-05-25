@@ -2,6 +2,9 @@ version: '3.8'
 
 services:
   n8n-unlicensed:
+    build:
+      context: .
+      dockerfile: Dockerfile.source-unlicensed
     image: n8n-unlicensed:latest
     container_name: n8n-unlicensed
     ports:
