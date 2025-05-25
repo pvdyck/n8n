@@ -45,12 +45,14 @@ FROM node:20-alpine
 RUN apk add --no-cache \
     bash \
     curl \
+    git \
     jq \
     sqlite \
     ca-certificates \
     su-exec \
     tini \
-    tzdata
+    tzdata \
+    openssh-client
 
 # Use the existing node user instead of creating n8n user
 # Create necessary directories
