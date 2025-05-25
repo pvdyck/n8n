@@ -1,0 +1,82 @@
+services:
+  n8n-enterprise-unlocked:
+    build:
+      context: .
+      dockerfile: Dockerfile.n8n-enterprise-unlocked
+      # Enable BuildKit for better caching
+      args:
+        DOCKER_BUILDKIT: 1
+    image: n8n-enterprise-unlocked:latest
+    container_name: n8n-enterprise-unlocked
+    ports:
+      # Map to port 6666 as requested
+      - "6666:5678"
+    environment:
+      # Core settings
+      - N8N_ENCRYPTION_KEY=n8n-enterprise-encryption-key-6666
+      - NODE_ENV=production
+      - N8N_SECURE_COOKIE=false
+      
+      # Disable telemetry and diagnostics
+      - N8N_DIAGNOSTICS_ENABLED=false
+      - N8N_TELEMETRY_ENABLED=false
+      - N8N_VERSION_NOTIFICATIONS_ENABLED=false
+      - N8N_HIRING_BANNER_ENABLED=false
+      
+      # Database settings
+      - DB_TYPE=sqlite
+      - DB_SQLITE_DATABASE=/home/node/.n8n/database.sqlite
+      
+      # Enable all features (belt and suspenders with our source mods)
+      - N8N_ENTERPRISE_FEATURES_ENABLED=true
+      - N8N_WORKFLOW_HISTORY_ENABLED=true
+      - N8N_VARIABLES_ENABLED=true
+      
+      # Performance settings
+      - EXECUTIONS_PROCESS=main
+      - N8N_CONCURRENCY_PRODUCTION_LIMIT=100
+      
+    volumes:
+      # Persistent data storage
+      - n8n-enterprise-data:/home/node/.n8n
+      - n8n-enterprise-files:/files
+      - n8n-enterprise-backup:/backup
+      
+    restart: unless-stopped
+    
+    # Resource limits (adjust as needed)
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
+    
+    # Logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5678/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  n8n-enterprise-data:
+    driver: local
+  n8n-enterprise-files:
+    driver: local
+  n8n-enterprise-backup:
+    driver: local
+
+networks:
+  default:
+    name: n8n-enterprise-network
