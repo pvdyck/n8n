@@ -10,7 +10,7 @@ services:
     container_name: n8n-enterprise-unlocked
     ports:
       # Map to port 6666 as requested
-      - "6666:5678"
+      - "8888:5678"
     environment:
       # Core settings
       - N8N_ENCRYPTION_KEY=n8n-enterprise-encryption-key-6666
