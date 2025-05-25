@@ -43,6 +43,16 @@ After first run, the following credentials are automatically created:
 - **Password**: N8nPassword123
 - **API Key**: n8n_api_test_key_123456789
 
+## Port Configuration
+
+- **Internal port**: n8n always runs on port 5678 inside the container
+- **Docker Compose**: Maps external port 7001 → internal 5678
+- **Direct Docker run**: Default maps 5678 → 5678
+
+Access URLs:
+- With docker-compose: `http://localhost:7001`
+- With docker run: `http://localhost:5678`
+
 ## Environment Variables
 
 Key environment variables set in these builds:

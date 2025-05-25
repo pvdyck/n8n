@@ -32,7 +32,8 @@
       "Bash(pnpm build:backend:*)",
       "Bash(/Users/pvdyck/Dev/n8n-1/test-enterprise-features.sh)",
       "Bash(/Users/pvdyck/Dev/n8n-1/test-api-complete.sh)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(ls:*)"
     ],
     "deny": []
   }
