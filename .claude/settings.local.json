@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep:*)",
+      "Bash(docker:*)",
+      "Bash(docker-compose:*)",
+      "Bash(rm:*)",
+      "Bash(wget:*)",
+      "Bash(mkdir:*)",
+      "Bash(sleep:*)",
+      "Bash(curl:*)",
+      "Bash(git:*)",
+      "Bash(curl)",
+      "Bash(curl*)",
+      "Bash(*)",
+      "Bash(node:*)",
+      "Bash(chmod:*)",
+      "Bash(http GET:*)",
+      "Bash(wget:*)",
+      "Bash(diff:*)",
+      "Bash(mv:*)",
+      "Bash(git remote add:*)",
+      "Bash(git checkout:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git reset:*)",
+      "Bash(git rm:*)",
+      "Bash(./test-license-features.sh:*)"
+    ],
+    "deny": []
+  }
+}

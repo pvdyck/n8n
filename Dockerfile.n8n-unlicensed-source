@@ -52,16 +52,13 @@ RUN apk add --no-cache \
     tini \
     tzdata
 
-# Create n8n user (matching official image)
-RUN addgroup -g 1000 -S n8n && \
-    adduser -u 1000 -S n8n -G n8n -s /bin/sh
-
+# Use the existing node user instead of creating n8n user
 # Create necessary directories
-RUN mkdir -p /home/n8n/.n8n /home/n8n/.cache /data && \
-    chown -R n8n:n8n /home/n8n /data
+RUN mkdir -p /home/node/.n8n /home/node/.cache /data && \
+    chown -R node:node /home/node /data
 
 # Copy built n8n from builder
-COPY --from=builder --chown=n8n:n8n /build /usr/local/lib/node_modules/n8n
+COPY --from=builder --chown=node:node /build /usr/local/lib/node_modules/n8n
 
 # Create symlinks for CLI commands
 RUN ln -s /usr/local/lib/node_modules/n8n/packages/cli/bin/n8n /usr/local/bin/n8n && \
@@ -71,7 +68,7 @@ RUN ln -s /usr/local/lib/node_modules/n8n/packages/cli/bin/n8n /usr/local/bin/n8
 ENV NODE_ENV=production \
     N8N_PORT=5678 \
     N8N_PROTOCOL=http \
-    N8N_USER_FOLDER=/home/n8n \
+    N8N_USER_FOLDER=/home/node \
     N8N_USER_MANAGEMENT_DISABLED=false \
     N8N_SECURE_COOKIE=false \
     EXECUTIONS_DATA_SAVE_ON_SUCCESS=all \
@@ -84,7 +81,7 @@ COPY <<'EOF' /init.sh
 set -e
 
 # Ensure proper permissions
-chown -R n8n:n8n /home/n8n/.n8n /data 2>/dev/null || true
+chown -R node:node /home/node/.n8n /data 2>/dev/null || true
 
 # Function to wait for n8n
 wait_for_n8n() {
@@ -127,7 +124,7 @@ setup_owner_and_api() {
             
             # Create API key
             echo "🔑 Creating API key..."
-            DB_PATH="/home/n8n/.n8n/database.sqlite"
+            DB_PATH="/home/node/.n8n/database.sqlite"
             
             # Wait for database to be ready
             local retries=10
@@ -137,7 +134,7 @@ setup_owner_and_api() {
             done
             
             if [ -f "$DB_PATH" ]; then
-                su-exec n8n sqlite3 "$DB_PATH" "INSERT INTO user_api_keys (id, apiKey, userId, label, scopes, createdAt, updatedAt) 
+                su-exec node sqlite3 "$DB_PATH" "INSERT INTO user_api_keys (id, apiKey, userId, label, scopes, createdAt, updatedAt) 
                                     SELECT lower(hex(randomblob(16))), 'n8n_api_test_key_123456789', id, 'Test API Key', '[\"global:owner\"]', datetime('now'), datetime('now') 
                                     FROM user 
                                     WHERE email = 'admin@n8n.local' 
@@ -192,9 +189,9 @@ setup_owner_and_api() {
     fi
 ) &
 
-# Start n8n as n8n user
+# Start n8n as node user
 echo "🚀 Starting n8n..."
-exec su-exec n8n tini -- n8n
+exec su-exec node tini -- n8n
 EOF
 
 RUN chmod +x /init.sh
@@ -203,7 +200,7 @@ RUN chmod +x /init.sh
 EXPOSE 5678
 
 # Set working directory
-WORKDIR /home/n8n
+WORKDIR /home/node
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s \
