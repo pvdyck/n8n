@@ -1,5 +1,5 @@
-# n8n Unlicensed - Optimized Build from Source
-# Multi-stage build with size optimization (21.9% smaller)
+# n8n Unlicensed - Built from source with license bypass
+# Multi-stage build for optimal image size
 
 # Stage 1: Build n8n from source
 FROM node:20-alpine AS builder
@@ -43,79 +43,35 @@ RUN pnpm build
 # Remove dev dependencies and rebuild for production
 RUN pnpm prune --prod
 
-# Stage 2: Clean up source before copying
-FROM builder AS source
-
-# Conservative cleanup in source stage
-RUN cd /build && \
-    # Remove TypeScript declaration files (safe to remove)
-    find node_modules -name "*.d.ts" -delete && \
-    # Remove source maps (safe to remove)
-    find node_modules -name "*.map" -delete && \
-    # Remove markdown files (safe to remove)
-    find node_modules -name "*.md" -delete && \
-    # Remove test directories (safe to remove)
-    find node_modules -type d \( -name "__tests__" -o -name "__test__" \) -exec rm -rf {} + 2>/dev/null || true && \
-    # Remove example directories (safe to remove)
-    find node_modules -type d -name "example" -exec rm -rf {} + 2>/dev/null || true && \
-    # Remove .github directories (safe to remove)
-    find node_modules -type d -name ".github" -exec rm -rf {} + 2>/dev/null || true && \
-    # Remove coverage directories (safe to remove)
-    find node_modules -type d -name "coverage" -exec rm -rf {} + 2>/dev/null || true && \
-    # Remove config files (safe to remove)
-    find node_modules -type f \( -name ".eslintrc*" -o -name ".prettierrc*" -o -name ".npmignore" -o -name ".gitignore" \) -delete && \
-    # Remove TypeScript files (but keep in src directories where they might be needed)
-    find node_modules -name "*.ts" ! -path "*/src/*" -delete && \
-    # Remove duplicate license files (keep only in package root)
-    find node_modules -mindepth 3 -name "LICENSE*" -delete && \
-    find node_modules -mindepth 3 -name "license*" -delete && \
-    cd -
-
-# Stage 2: Optimized runtime
+# Stage 2: Create the runtime image
 FROM node:20-alpine
 
 # Install runtime dependencies
 RUN apk add --no-cache \
     bash \
     curl \
+    git \
     jq \
     sqlite \
     ca-certificates \
     su-exec \
     tini \
-    tzdata && \
-    rm -rf /var/cache/apk/*
+    tzdata \
+    openssh-client
 
-# Create directories
+# Use the existing node user instead of creating n8n user
+# Create necessary directories
 RUN mkdir -p /home/node/.n8n /home/node/.cache /data && \
     chown -R node:node /home/node /data
 
 # Copy built n8n from builder
-COPY --from=source --chown=node:node /build /usr/local/lib/node_modules/n8n
+COPY --from=builder --chown=node:node /build /usr/local/lib/node_modules/n8n
 
-# Additional safe cleanup
-RUN cd /usr/local/lib/node_modules/n8n && \
-    # Clean packages directory
-    find packages -name "*.ts" -delete && \
-    find packages -name "*.map" -delete && \
-    find packages -name "*.spec.js" -delete && \
-    find packages -name "*.test.js" -delete && \
-    # Remove git files
-    find . -name ".git*" -type f -delete && \
-    rm -rf .git && \
-    # Rebuild sqlite3
-    cd node_modules/sqlite3 && \
-    npm run install 2>/dev/null || npm run rebuild 2>/dev/null || true && \
-    cd ../.. && \
-    # Clean caches
-    npm cache clean --force 2>/dev/null || true && \
-    rm -rf /tmp/* /var/tmp/* /root/.npm /root/.cache
-
-# Create symlinks
+# Create symlinks for CLI commands
 RUN ln -s /usr/local/lib/node_modules/n8n/packages/cli/bin/n8n /usr/local/bin/n8n && \
-    ln -s /usr/local/lib/node_modules/n8n/node_modules/.bin/node-gyp /usr/local/bin/node-gyp 2>/dev/null || true
+    ln -s /usr/local/lib/node_modules/n8n/node_modules/.bin/node-gyp /usr/local/bin/node-gyp
 
-# Set environment
+# Set up environment
 ENV NODE_ENV=production \
     N8N_PORT=5678 \
     N8N_PROTOCOL=http \
@@ -224,7 +180,7 @@ setup_owner_and_api() {
     
     echo ""
     echo "============================================"
-    echo "🚀 n8n UNLICENSED (Optimized Build)"
+    echo "🚀 n8n UNLICENSED (Built from Source)"
     echo "============================================"
     echo "📍 URL: http://localhost:5678"
     echo "📧 Email: admin@n8n.local"
@@ -249,10 +205,15 @@ EOF
 
 RUN chmod +x /init.sh
 
+# Expose port
 EXPOSE 5678
+
+# Set working directory
 WORKDIR /home/node
 
+# Health check
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s \
     CMD curl -f http://localhost:5678/healthz || exit 1
 
+# Use our init script as entrypoint
 ENTRYPOINT ["/init.sh"]

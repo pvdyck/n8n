@@ -6,12 +6,15 @@ This directory contains custom Docker builds for n8n with specific modifications
 
 ### 1. Source Unlicensed (`Dockerfile.source-unlicensed`)
 
+**Optimized build** - 21.9% smaller image size (1.57GB vs 2.01GB)
+
 Builds n8n from source with the following modifications:
 - ✅ All enterprise features enabled without license
 - ✅ License validation bypassed
 - ✅ Telemetry and diagnostics disabled
 - ✅ Auto-renewal disabled
 - ✅ No external "phone home" calls
+- ✅ Size optimized (removed dev files, test files, docs)
 
 **Build command:**
 ```bash
@@ -62,3 +65,4 @@ Key environment variables set in these builds:
 - All enterprise features are available without a license
 - No external connections for telemetry or license validation
 - Based on the fork at https://github.com/pvdyck/n8n
+- Image size optimized by removing development artifacts, test files, and documentation
