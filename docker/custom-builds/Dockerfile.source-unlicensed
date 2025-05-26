@@ -4,8 +4,8 @@
 # Stage 1: Build n8n from source
 FROM node:20-alpine AS builder
 
-# Install build dependencies
-RUN apk add --no-cache \
+# Install build dependencies as virtual package (for easy cleanup)
+RUN apk add --no-cache --virtual .build-deps \
     bash \
     git \
     python3 \
@@ -34,8 +34,10 @@ RUN echo "Verifying license modifications..." && \
     grep -n "Auto-renewals disabled for unlicensed version" packages/cli/src/license.ts && \
     echo "✅ License modifications confirmed!"
 
-# Install dependencies
-RUN pnpm install --frozen-lockfile
+# Install dependencies with cache mounts (from official n8n/Dockerfile)
+RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
+    --mount=type=cache,id=pnpm-metadata,target=/root/.cache/pnpm/metadata \
+    pnpm install --frozen-lockfile
 
 # Build all packages
 RUN pnpm build
@@ -48,6 +50,8 @@ FROM builder AS source
 
 # Conservative cleanup in source stage
 RUN cd /build && \
+    # Delete any source code or typings (from official n8n/Dockerfile)
+    find . -type f -name "*.ts" -o -name "*.vue" -o -name "tsconfig.json" -o -name "*.tsbuildinfo" | xargs rm -rf && \
     # Remove TypeScript declaration files (safe to remove)
     find node_modules -name "*.d.ts" -delete && \
     # Remove source maps (safe to remove)
@@ -69,7 +73,10 @@ RUN cd /build && \
     # Remove duplicate license files (keep only in package root)
     find node_modules -mindepth 3 -name "LICENSE*" -delete && \
     find node_modules -mindepth 3 -name "license*" -delete && \
-    cd -
+    cd - && \
+    # Clean up build dependencies and caches (from official builds)
+    apk del .build-deps && \
+    rm -rf /tmp/* /root/.npm /root/.cache /root/.local/share/pnpm
 
 # Stage 2: Optimized runtime
 FROM node:20-alpine
@@ -107,15 +114,19 @@ RUN cd /usr/local/lib/node_modules/n8n && \
     cd node_modules/sqlite3 && \
     npm run install 2>/dev/null || npm run rebuild 2>/dev/null || true && \
     cd ../.. && \
-    # Clean caches
+    # Clean caches (more aggressive cleanup from official builds)
     npm cache clean --force 2>/dev/null || true && \
-    rm -rf /tmp/* /var/tmp/* /root/.npm /root/.cache
+    rm -rf /tmp/* /var/tmp/* /root/.npm /root/.cache /root/.local && \
+    # Remove v8 compile cache if exists
+    rm -rf /tmp/v8-compile-cache* && \
+    # Clean package manager artifacts
+    find / -name "*.cache" -type d 2>/dev/null | grep -v "node_modules" | xargs rm -rf 2>/dev/null || true
 
 # Create symlinks
 RUN ln -s /usr/local/lib/node_modules/n8n/packages/cli/bin/n8n /usr/local/bin/n8n && \
     ln -s /usr/local/lib/node_modules/n8n/node_modules/.bin/node-gyp /usr/local/bin/node-gyp 2>/dev/null || true
 
-# Set environment
+# Set environment (includes SHELL from official builds)
 ENV NODE_ENV=production \
     N8N_PORT=5678 \
     N8N_PROTOCOL=http \
@@ -126,7 +137,8 @@ ENV NODE_ENV=production \
     EXECUTIONS_DATA_SAVE_ON_ERROR=all \
     EXECUTIONS_DATA_SAVE_ON_PROGRESS=false \
     N8N_DIAGNOSTICS_ENABLED=false \
-    N8N_LICENSE_AUTO_RENEW_ENABLED=false
+    N8N_LICENSE_AUTO_RENEW_ENABLED=false \
+    SHELL=/bin/sh
 
 # Create initialization script
 COPY <<'EOF' /init.sh

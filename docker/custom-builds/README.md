@@ -8,6 +8,8 @@ This directory contains custom Docker builds for n8n with specific modifications
 
 **Optimized build** - 21.9% smaller image size (1.57GB vs 2.01GB)
 
+This is the default and recommended build. It incorporates optimization techniques from official n8n Dockerfiles including cache mounts, aggressive cleanup, and multi-stage builds.
+
 Builds n8n from source with the following modifications:
 - ✅ All enterprise features enabled without license
 - ✅ License validation bypassed
