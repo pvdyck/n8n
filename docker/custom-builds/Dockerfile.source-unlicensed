@@ -22,11 +22,16 @@ WORKDIR /build
 RUN git clone -b n8n-unlicensed https://github.com/pvdyck/n8n.git . && \
     echo "Cloned n8n-unlicensed branch"
 
+# Copy our modified license file
+COPY license-unlicensed.ts /build/packages/cli/src/license.ts
+
 # Verify our license modifications are present
 RUN echo "Verifying license modifications..." && \
     grep -n "Always return true" packages/cli/src/license.ts && \
     grep -n "Always return unlimited" packages/cli/src/license.ts && \
     grep -n "Always return Enterprise" packages/cli/src/license.ts && \
+    grep -n "Renewal disabled for unlicensed version" packages/cli/src/license.ts && \
+    grep -n "Auto-renewals disabled for unlicensed version" packages/cli/src/license.ts && \
     echo "✅ License modifications confirmed!"
 
 # Install dependencies

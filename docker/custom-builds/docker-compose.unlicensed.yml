@@ -22,6 +22,8 @@ services:
       - N8N_DEPLOYMENT_TYPE=self-hosted
       - DB_TYPE=sqlite
       - DB_SQLITE_DATABASE=/home/node/.n8n/database.sqlite
+      - N8N_LICENSE_AUTO_RENEW_ENABLED=false
+      - N8N_LICENSE_SERVER_URL=
     volumes:
       - n8n-unlicensed-data:/home/node/.n8n
     restart: unless-stopped
