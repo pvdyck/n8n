@@ -25,6 +25,20 @@ RUN git clone -b n8n-unlicensed https://github.com/pvdyck/n8n.git . && \
 # Copy our modified license file
 COPY license-unlicensed.ts /build/packages/cli/src/license.ts
 
+# Apply API key creation fixes with sed
+RUN echo "Applying API key creation fixes..." && \
+    # Fix ExecutionsPruningService import (make sure it's imported from correct file)
+    sed -i 's/Container\.get(PruningService)/Container.get(ExecutionsPruningService)/g' packages/cli/src/commands/start.ts && \
+    # Fix UserRepository import path
+    sed -i "s|'@/databases/repositories/user.repository'|'@n8n/db'|g" packages/cli/src/commands/start.ts && \
+    # Combine imports
+    sed -i 's/const { ApiKeyRepository } = await import/const { ApiKeyRepository, UserRepository } = await import/g' packages/cli/src/commands/start.ts && \
+    # Remove duplicate UserRepository import
+    sed -i '/const { UserRepository } = await import/d' packages/cli/src/commands/start.ts && \
+    # Fix Logger import in license.ts
+    sed -i 's/import { Logger } from '\''n8n-core'\'';/import { Logger } from '\''@n8n\/backend-common'\'';/g' packages/cli/src/license.ts && \
+    echo "✅ API key creation fixes applied!"
+
 # Verify our license modifications are present
 RUN echo "Verifying license modifications..." && \
     grep -n "Always return true" packages/cli/src/license.ts && \
@@ -42,40 +56,16 @@ RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
 # Build all packages
 RUN pnpm build
 
-# Remove dev dependencies and rebuild for production
-RUN pnpm prune --prod
-
-# Stage 2: Clean up source before copying
-FROM builder AS source
-
-# Conservative cleanup in source stage
+# Delete source files and prepare for production
 RUN cd /build && \
-    # Delete any source code or typings (from official n8n/Dockerfile)
     find . -type f -name "*.ts" -o -name "*.vue" -o -name "tsconfig.json" -o -name "*.tsbuildinfo" | xargs rm -rf && \
-    # Remove TypeScript declaration files (safe to remove)
-    find node_modules -name "*.d.ts" -delete && \
-    # Remove source maps (safe to remove)
-    find node_modules -name "*.map" -delete && \
-    # Remove markdown files (safe to remove)
-    find node_modules -name "*.md" -delete && \
-    # Remove test directories (safe to remove)
-    find node_modules -type d \( -name "__tests__" -o -name "__test__" \) -exec rm -rf {} + 2>/dev/null || true && \
-    # Remove example directories (safe to remove)
-    find node_modules -type d -name "example" -exec rm -rf {} + 2>/dev/null || true && \
-    # Remove .github directories (safe to remove)
-    find node_modules -type d -name ".github" -exec rm -rf {} + 2>/dev/null || true && \
-    # Remove coverage directories (safe to remove)
-    find node_modules -type d -name "coverage" -exec rm -rf {} + 2>/dev/null || true && \
-    # Remove config files (safe to remove)
-    find node_modules -type f \( -name ".eslintrc*" -o -name ".prettierrc*" -o -name ".npmignore" -o -name ".gitignore" \) -delete && \
-    # Remove TypeScript files (but keep in src directories where they might be needed)
-    find node_modules -name "*.ts" ! -path "*/src/*" -delete && \
-    # Remove duplicate license files (keep only in package root)
-    find node_modules -mindepth 3 -name "LICENSE*" -delete && \
-    find node_modules -mindepth 3 -name "license*" -delete && \
-    cd - && \
-    # Clean up build dependencies and caches (from official builds)
-    apk del .build-deps && \
+    rm -rf packages/@n8n/benchmark
+
+# Deploy production build  
+RUN pnpm --filter=n8n --prod --no-optional --legacy deploy /compiled
+
+# Clean up build dependencies
+RUN apk del .build-deps && \
     rm -rf /tmp/* /root/.npm /root/.cache /root/.local/share/pnpm
 
 # Stage 2: Optimized runtime
@@ -98,7 +88,7 @@ RUN mkdir -p /home/node/.n8n /home/node/.cache /data && \
     chown -R node:node /home/node /data
 
 # Copy built n8n from builder
-COPY --from=source --chown=node:node /build /usr/local/lib/node_modules/n8n
+COPY --from=builder --chown=node:node /compiled /usr/local/lib/node_modules/n8n
 
 # Additional safe cleanup
 RUN cd /usr/local/lib/node_modules/n8n && \
@@ -123,8 +113,8 @@ RUN cd /usr/local/lib/node_modules/n8n && \
     find / -name "*.cache" -type d 2>/dev/null | grep -v "node_modules" | xargs rm -rf 2>/dev/null || true
 
 # Create symlinks
-RUN ln -s /usr/local/lib/node_modules/n8n/packages/cli/bin/n8n /usr/local/bin/n8n && \
-    ln -s /usr/local/lib/node_modules/n8n/node_modules/.bin/node-gyp /usr/local/bin/node-gyp 2>/dev/null || true
+RUN ln -s /usr/local/lib/node_modules/n8n/bin/n8n /usr/local/bin/n8n && \
+    chmod +x /usr/local/lib/node_modules/n8n/bin/n8n
 
 # Set environment (includes SHELL from official builds)
 ENV NODE_ENV=production \
