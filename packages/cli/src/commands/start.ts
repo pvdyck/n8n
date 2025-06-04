@@ -317,7 +317,7 @@ export class Start extends BaseCommand {
 		// Create default API key if none exists
 		await this.createDefaultApiKeyIfNeeded();
 
-		Container.get(PruningService).init();
+		Container.get(ExecutionsPruningService).init();
 
 		if (config.getEnv('executions.mode') === 'regular') {
 			await this.runEnqueuedExecutions();
@@ -405,8 +405,7 @@ export class Start extends BaseCommand {
 
 	private async createDefaultApiKeyIfNeeded() {
 		try {
-			const { ApiKeyRepository } = await import('@n8n/db');
-			const { UserRepository } = await import('@/databases/repositories/user.repository');
+			const { ApiKeyRepository, UserRepository } = await import('@n8n/db');
 			const { PublicApiKeyService } = await import('@/services/public-api-key.service');
 
 			const apiKeyRepo = Container.get(ApiKeyRepository);
