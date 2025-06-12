@@ -7,13 +7,13 @@ export async function createWorkflowStatisticsItem(
 	workflowId: Workflow['id'],
 	data?: Partial<WorkflowStatistics>,
 ) {
-	const entity = Container.get(WorkflowStatisticsRepository).create({
+	const entity = {
 		count: 0,
 		latestEvent: new Date().toISOString(),
 		name: StatisticsNames.manualSuccess,
 		...(data ?? {}),
 		workflowId,
-	});
+	};
 
 	await Container.get(WorkflowStatisticsRepository).insert(entity);
 

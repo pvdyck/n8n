@@ -169,7 +169,9 @@ export class WorkflowsController {
 						project.id,
 						transactionManager,
 					);
-					await transactionManager.update(WorkflowEntity, { id: workflow.id }, { parentFolder });
+					await transactionManager.update(WorkflowEntity, { id: workflow.id }, {
+						parentFolderId,
+					} as any);
 				} catch {}
 			}
 

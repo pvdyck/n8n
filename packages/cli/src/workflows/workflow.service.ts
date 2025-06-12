@@ -312,7 +312,9 @@ export class WorkflowService {
 					throw new FolderNotFoundError(parentFolderId);
 				}
 			}
-			updatePayload.parentFolder = parentFolderId === PROJECT_ROOT ? null : { id: parentFolderId };
+			// TypeORM requires setting the FK column directly, not the relation object
+			(updatePayload as any).parentFolderId =
+				parentFolderId === PROJECT_ROOT ? null : parentFolderId;
 		}
 
 		await this.workflowRepository.update(workflowId, updatePayload);

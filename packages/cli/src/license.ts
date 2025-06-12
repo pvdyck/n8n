@@ -345,7 +345,7 @@ export class License implements LicenseProvider {
 		return this.manager?.getCurrentEntitlements() ?? [];
 	}
 
-	getValue<T extends keyof FeatureReturnType>(feature: T): FeatureReturnType[T] {
+	getValue<T extends keyof FeatureReturnType>(_feature: T): FeatureReturnType[T] {
 		// Always return unlimited for quota features
 		return UNLIMITED_LICENSE_QUOTA as FeatureReturnType[T];
 	}

@@ -562,10 +562,14 @@ export class SourceControlImportService {
 					newSharedCredential.projectId = remoteOwnerProject?.id ?? personalProject.id;
 					newSharedCredential.role = 'credential:owner';
 
-					await this.sharedCredentialsRepository.upsert({ ...newSharedCredential }, [
-						'credentialsId',
-						'projectId',
-					]);
+					await this.sharedCredentialsRepository.upsert(
+						{
+							credentialsId: newSharedCredential.credentialsId,
+							projectId: newSharedCredential.projectId,
+							role: newSharedCredential.role,
+						} as any,
+						['credentialsId', 'projectId'],
+					);
 				}
 
 				return {
@@ -616,8 +620,9 @@ export class SourceControlImportService {
 					);
 				}
 
-				const tagCopy = this.tagRepository.create(tag);
-				await this.tagRepository.upsert(tagCopy, {
+				// Only pass primitive properties to avoid TypeORM type issues
+				const { workflows, ...tagData } = tag;
+				await this.tagRepository.upsert(tagData as any, {
 					skipUpdateIfNoValuesChanged: true,
 					conflictPaths: { id: true },
 				});
@@ -664,18 +669,20 @@ export class SourceControlImportService {
 
 		await Promise.all(
 			mappedFolders.folders.map(async (folder) => {
-				const folderCopy = this.folderRepository.create({
-					id: folder.id,
-					name: folder.name,
-					homeProject: {
-						id: projects.find((p) => p.id === folder.homeProjectId)?.id ?? personalProject.id,
-					},
-				});
+				const homeProjectId =
+					projects.find((p) => p.id === folder.homeProjectId)?.id ?? personalProject.id;
 
-				await this.folderRepository.upsert(folderCopy, {
-					skipUpdateIfNoValuesChanged: true,
-					conflictPaths: { id: true },
-				});
+				await this.folderRepository.upsert(
+					{
+						id: folder.id,
+						name: folder.name,
+						homeProjectId,
+					} as any,
+					{
+						skipUpdateIfNoValuesChanged: true,
+						conflictPaths: { id: true },
+					},
+				);
 			}),
 		);
 

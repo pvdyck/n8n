@@ -443,7 +443,9 @@ export class CredentialsHelper extends ICredentialsHelper {
 			type,
 		};
 
-		await this.credentialsRepository.update(findQuery, newCredentialsData);
+		// Remove the 'shared' property to avoid TypeORM type issues
+		const { shared, ...updateData } = newCredentialsData;
+		await this.credentialsRepository.update(findQuery, updateData as any);
 	}
 
 	async credentialCanUseExternalSecrets(nodeCredential: INodeCredentialsDetails): Promise<boolean> {

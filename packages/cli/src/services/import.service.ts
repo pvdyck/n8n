@@ -57,7 +57,9 @@ export class ImportService {
 
 				const exists = workflow.id ? await tx.existsBy(WorkflowEntity, { id: workflow.id }) : false;
 
-				const upsertResult = await tx.upsert(WorkflowEntity, workflow, ['id']);
+				// Remove relationships to avoid TypeORM type issues
+				const { tags, ...workflowData } = workflow;
+				const upsertResult = await tx.upsert(WorkflowEntity, workflowData as any, ['id']);
 				const workflowId = upsertResult.identifiers.at(0)?.id as string;
 
 				const personalProject = await tx.findOneByOrFail(Project, { id: projectId });

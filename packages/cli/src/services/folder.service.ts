@@ -76,7 +76,7 @@ export class FolderService {
 			}
 			await this.folderRepository.update(
 				{ id: folderId },
-				{ parentFolder: parentFolderId !== PROJECT_ROOT ? { id: parentFolderId } : null },
+				{ parentFolderId: parentFolderId !== PROJECT_ROOT ? parentFolderId : null },
 			);
 		}
 	}

@@ -692,22 +692,16 @@ export class WorkflowRepository extends Repository<WorkflowEntity> {
 	async moveAllToFolder(fromFolderId: string, toFolderId: string, tx: EntityManager) {
 		await tx.update(
 			WorkflowEntity,
-			{ parentFolder: { id: fromFolderId } },
+			{ parentFolderId: fromFolderId } as any,
 			{
-				parentFolder:
-					toFolderId === PROJECT_ROOT
-						? null
-						: {
-								id: toFolderId,
-							},
-			},
+				parentFolderId: toFolderId === PROJECT_ROOT ? null : toFolderId,
+			} as any,
 		);
 	}
 
 	async moveToFolder(workflowIds: string[], toFolderId: string) {
-		await this.update(
-			{ id: In(workflowIds) },
-			{ parentFolder: toFolderId === PROJECT_ROOT ? null : { id: toFolderId } },
-		);
+		await this.update({ id: In(workflowIds) }, {
+			parentFolderId: toFolderId === PROJECT_ROOT ? null : toFolderId,
+		} as any);
 	}
 }

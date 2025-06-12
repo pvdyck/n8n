@@ -280,15 +280,10 @@ export class FolderRepository extends Repository<Folder> {
 	): Promise<void> {
 		await tx.update(
 			Folder,
-			{ parentFolder: { id: fromFolderId } },
+			{ parentFolderId: fromFolderId } as any,
 			{
-				parentFolder:
-					toFolderId === PROJECT_ROOT
-						? null
-						: {
-								id: toFolderId,
-							},
-			},
+				parentFolderId: toFolderId === PROJECT_ROOT ? null : toFolderId,
+			} as any,
 		);
 	}
 

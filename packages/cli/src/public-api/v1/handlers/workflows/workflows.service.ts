@@ -104,7 +104,9 @@ export async function deleteWorkflow(workflow: WorkflowEntity): Promise<Workflow
 }
 
 export async function updateWorkflow(workflowId: string, updateData: WorkflowEntity) {
-	return await Container.get(WorkflowRepository).update(workflowId, updateData);
+	// Remove relationships to avoid TypeORM type issues
+	const { tags, shared, ...workflowData } = updateData;
+	return await Container.get(WorkflowRepository).update(workflowId, workflowData as any);
 }
 
 export function parseTagNames(tags: string): string[] {

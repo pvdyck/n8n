@@ -388,7 +388,9 @@ export class CredentialsService {
 		await this.externalHooks.run('credentials.update', [newCredentialData]);
 
 		// Update the credentials in DB
-		await this.credentialsRepository.update(credentialId, newCredentialData);
+		// Remove the 'shared' property to avoid TypeORM type issues
+		const { shared, ...updateData } = newCredentialData;
+		await this.credentialsRepository.update(credentialId, updateData as any);
 
 		// We sadly get nothing back from "update". Neither if it updated a record
 		// nor the new value. So query now the updated entry.

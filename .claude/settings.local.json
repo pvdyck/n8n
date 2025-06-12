@@ -40,7 +40,9 @@
       "Bash(npm --version)",
       "Bash(npm run typecheck:*)",
       "Bash(tree:*)",
-      "Bash(./test-build.sh:*)"
+      "Bash(./test-build.sh:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run build:backend:*)"
     ],
     "deny": []
   }
