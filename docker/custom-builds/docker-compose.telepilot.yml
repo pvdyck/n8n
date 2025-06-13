@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  n8n-telepilot:
+    build:
+      context: ../..
+      dockerfile: docker/custom-builds/Dockerfile.telepilot
+    image: n8n-unlicensed:telepilot
+    container_name: n8n-telepilot
+    ports:
+      - "5680:5678"  # Using different port to avoid conflict
+    environment:
+      - NODE_ENV=production
+      - N8N_DIAGNOSTICS_ENABLED=false
+      - N8N_LICENSE_AUTO_RENEW_ENABLED=false
+      - N8N_VERSION_NOTIFICATIONS_ENABLED=false
+      - N8N_TEMPLATES_ENABLED=true
+      - DB_TYPE=sqlite
+      - DB_SQLITE_DATABASE=/home/node/.n8n/database.sqlite
+      - EXECUTIONS_DATA_SAVE_ON_SUCCESS=all
+      - EXECUTIONS_DATA_SAVE_ON_ERROR=all
+    volumes:
+      - n8n-telepilot-data:/home/node/.n8n
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5678/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  n8n-telepilot-data:
