@@ -42,7 +42,8 @@
       "Bash(tree:*)",
       "Bash(./test-build.sh:*)",
       "Bash(npx tsc:*)",
-      "Bash(npm run build:backend:*)"
+      "Bash(npm run build:backend:*)",
+      "WebFetch(domain:docs.n8n.io)"
     ],
     "deny": []
   }

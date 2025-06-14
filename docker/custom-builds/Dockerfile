@@ -7,6 +7,7 @@ FROM node:${NODE_VERSION}-alpine
 RUN apk add --no-cache \
     bash \
     git \
+    openssh-client \
     python3 \
     make \
     g++ \

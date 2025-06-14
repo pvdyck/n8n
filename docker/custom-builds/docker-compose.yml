@@ -22,6 +22,12 @@ services:
       - DB_SQLITE_DATABASE=/home/node/.n8n/database.sqlite
       - EXECUTIONS_DATA_SAVE_ON_SUCCESS=all
       - EXECUTIONS_DATA_SAVE_ON_ERROR=all
+      # Enable source control feature
+      - N8N_FEATURE_SOURCE_CONTROL_GIT=true
+      - N8N_SOURCECONTROL_DEFAULT_SSH_KEY_TYPE=ed25519
+      # Additional Git settings for troubleshooting
+      - N8N_PUSH_BACKEND=websocket
+      - N8N_HIRING_BANNER_ENABLED=false
     volumes:
       - n8n-data:/home/node/.n8n
     restart: unless-stopped
